@@ -248,6 +248,11 @@ void b3CreateContact( b3World* world, b3Shape* shapeA, b3Shape* shapeB, int chil
 		contact->flags |= b3_contactEnableContactEvents;
 	}
 
+	if ( ( shapeA->flags & b3_enableSpeculative ) && ( shapeB->flags & b3_enableSpeculative ) )
+	{
+		contact->flags |= b3_enableSpeculativePoints;
+	}
+
 	// Connect to body A
 	{
 		contact->edges[0].bodyId = shapeA->bodyId;
@@ -739,6 +744,16 @@ bool b3UpdateContact( b3World* world, int workerIndex, b3Contact* contact, b3Sha
 		memcpy( &childShapeA, shapeA, sizeof( b3Shape ) );
 
 		childShapeA.type = child.type;
+
+		// Handle child material for non-meshes.
+		if ( child.type != b3_meshShape )
+		{
+			B3_ASSERT( 0 <= child.materialIndices[0] && child.materialIndices[0] < shapeA->materialCount );
+			const b3SurfaceMaterial* parentMaterials = b3GetShapeMaterials( shapeA );
+			childShapeA.material = parentMaterials[child.materialIndices[0]];
+			childShapeA.materials = NULL;
+			childShapeA.materialCount = 1;
+		}
 
 		if ( child.type == b3_capsuleShape )
 		{
